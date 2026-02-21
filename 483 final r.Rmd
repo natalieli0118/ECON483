@@ -1,0 +1,223 @@
+---
+title: "ECON483"
+author: "Natalie Li"
+date: "2025-11-16"
+output: pdf_document
+---
+```{r}
+library(tidyverse)
+library(broom)
+```
+
+```{r}
+dat <- read.csv("/Users/natalieli/Desktop/ECON483/cleaned_data.csv")
+```
+
+Histograms: citations & log citations
+```{r}
+dat$log_citations <- log(dat$cited_by_count + 1)
+
+# Histogram of raw citations
+ggplot(dat, aes(x = cited_by_count)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Distribution of Citation Counts",
+       x = "Citations", y = "Frequency")
+
+# Histogram of log citations
+ggplot(dat, aes(x = log_citations)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Distribution of Log Citations",
+       x = "log(Citations + 1)", y = "Frequency")
+
+```
+The distribution of citation counts is very right-skewed — meaning most papers receive very few citations, while a small number of papers receive extremely high citations (over 100, even above 600).
+“Most papers in the dataset are cited very few times, while only a small number are heavily cited, so the citation data is highly skewed.”
+
+After applying the log transformation, the distribution becomes much more spread out and closer to a bell-shaped form.
+The log scale compresses extreme values, making the data more suitable for regression because residuals will be more evenly distributed.
+This transformation reduces the influence of outliers and allows linear models to perform better.
+“Log-transforming citations produces a much more balanced distribution, so it becomes more appropriate for linear regression analysis.”
+
+      Histogram: title length
+```{r}
+ggplot(dat, aes(x = title_length)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Distribution of Title Length",
+       x = "Number of Words in Title", y = "Frequency")
+```
+
+Scatterplot: title length vs log citations
+```{r}
+ggplot(dat, aes(x = title_length, y = log_citations)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Log Citations vs Title Length",
+       x = "Title Length (words)", y = "log(Citations + 1)")
+```
+There is no clear upward or downward linear trend between title length and log citations.
+The fitted regression line shows a very slight negative slope, suggesting longer titles may be associated with slightly fewer citations, but the pattern is weak and visually unclear.
+The data points show a wide vertical spread at every title length value, meaning title length alone does not explain citation variations well.
+“The scatterplot shows no strong visible relationship between title length and citation performance — papers with short and long titles both appear across low and high citation values.”
+
+Conclusion for the three graphs: “The distribution of citation counts is highly skewed, so log transformation was necessary. After transforming, the scatterplot still shows no strong linear relationship between title length and citations, suggesting that title length by itself is not a strong predictor of academic impact.”
+
+      Boxplot: punctuation vs citations
+```{r}
+ggplot(dat, aes(x = factor(has_colon),
+                y = log_citations)) +
+  geom_boxplot() +
+  labs(title = "Log Citations by Presence of Colon in Title",
+       x = "Has Colon (0 = No, 1 = Yes)",
+       y = "log(Citations + 1)")
+```
+Papers with or without a colon in the title show very similar citation levels overall.
+The median citation value is nearly the same for both groups, and the spread (variation) also looks very similar.
+This suggests that including a colon does not meaningfully change citation performance.
+“Titles containing a colon do not appear to receive more citations than titles without one.”
+
+      Boxplot: question vs citations
+```{r}
+ggplot(dat, aes(x = factor(has_question),
+                y = log_citations)) +
+  geom_boxplot() +
+  labs(title = "Log Citations by Presence of Question Mark in Title",
+       x = "Has Question Mark (0 = No, 1 = Yes)",
+       y = "log(Citations + 1)")
+
+```
+Titles with a question mark tend to show slightly lower median citation values than titles without one, but sample size is very small.
+The overall distribution remains similar and highly overlapping, so differences do not look strong or conclusive.
+“Titles that include a question mark show slightly lower citation levels, but the difference is small and not clearly meaningful.”
+
+“You can see a few outliers, but medians are almost identical.”
+
+
+      Correlation matrix / heatmap
+```{r}
+num_vars <- dat %>%
+  select(log_citations, cited_by_count,
+         title_length, avg_word_length,
+         num_authors, publication_year,
+         open_access_dummy, has_colon, has_question)
+
+cor_mat <- cor(num_vars)
+cor_mat
+```
+
+Model 1 – Simple OLS
+```{r}
+m1 <- lm(log_citations ~ title_length, data = dat)
+summary(m1)
+```
+Original model form:
+log(Citationsi )=alpha0 +alpha01 TitleLengthi +ui
+Plug in the estimated coefficients:
+hat log(Citationsi ) =1.349-0.0167*TitleLengthi
+
+Intercept (1.349)
+When a title has zero words (hypothetical baseline), the predicted log-citations is 1.349.
+Slope (–0.0167)
+Holding everything else constant in this simple model, each additional word in the title is associated with a decrease of 0.0167 in predicted log-citations.
+Transforming back to percentage terms:
+100×(e-0.0167-1)=-1.66%
+
+Each additional word in the title is linked to approximately 1.7% fewer citations, on average.
+
+p-value for title length = 0.299, which is greater than 0.05
+-Not statistically significant
+-We cannot conclude that title length affects citation counts based on this model alone.
+R^2 = 0.0047 (less than 1%)
+-Title length explains almost none of the variation in citation counts.
+
+“In the simple model, longer titles are associated with slightly fewer citations, but the effect is very small and not statistically significant.”
+
+“This first model looks at the relationship between title length and citations without any control variables. The slope is slightly negative, suggesting that longer titles tend to receive fewer citations, but the effect is very small and statistically insignificant. This simple model explains less than 1% of citation variation, so we need a more complete model.”
+
+Model 2 – Full Multiple Regression (main model)
+```{r}
+m2 <- lm(log_citations ~ title_length +
+                         avg_word_length +
+                         has_colon +
+                         num_authors +
+                         publication_year +
+                         open_access_dummy,
+         data = dat)
+
+summary(m2)
+```
+log(Citationsi ) =266.36-0.0167TitleLengthi -0.0319AvgWordLeni +0.0762HasColoni +0.0316NumAuthorsi -0.1313PublicationYeari +0.5237OpenAccessi
+
+“After adding controls, title complexity variables remain statistically insignificant, suggesting that title length and wording do not meaningfully influence citation counts. Instead, open-access status and age of publication are the strongest predictors.”
+
+
+Model 3 – Nonlinear: quadratic in title length
+```{r}
+m3 <- lm(log_citations ~ title_length +
+                         I(title_length^2) +
+                         avg_word_length +
+                         has_colon +
+                         num_authors +
+                         publication_year +
+                         open_access_dummy,
+         data = dat)
+
+summary(m3)
+```
+“After adding a squared term to test for a nonlinear relationship, title length remains statistically insignificant, and model fit does not improve. This suggests there is no meaningful nonlinear effect of title length on citation outcomes.”
+“After adding a squared term to test for a nonlinear relationship, title length remains statistically insignificant, and model fit does not improve. This suggests there is no meaningful nonlinear effect of title length on citation outcomes.”
+
+      Residual vs fitted
+```{r}
+dat$m2_fitted <- fitted(m2)
+dat$m2_resid  <- resid(m2)
+
+ggplot(dat, aes(x = m2_fitted, y = m2_resid)) +
+  geom_point(alpha = 0.4) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Residuals vs Fitted (Model 2)",
+       x = "Fitted values", y = "Residuals")
+
+```
+
+      Residuals vs title length
+```{r}
+ggplot(dat, aes(x = title_length, y = m2_resid)) +
+  geom_point(alpha = 0.4) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Residuals vs Title Length (Model 2)",
+       x = "Title Length", y = "Residuals")
+```
+
+Q-Q plot of residuals
+```{r}
+qqnorm(dat$m2_resid)
+qqline(dat$m2_resid, col = "red")
+```
+
+Hypothesis testing
+For (a), (b), (c): you can just use p-values from summary(m2):
+title_length → H_0: alpha1 = 0
+avg_word_length → H_0: alpha2 = 0
+has_colon → H_0: alpha3 = 0
+
+For (d) alpha4 = alpha6 (num_authors effect equals open_access effect)
+```{r}
+library(car)
+
+linearHypothesis(m2, "num_authors = open_access_dummy")
+```
+      
+      Omitted variable bias model:
+a reduced regression that excludes num_authors and open_access_dummy
+```{r}
+m_ovb <- lm(log_citations ~ title_length +
+                               avg_word_length +
+                               has_colon +
+                               publication_year,
+            data = dat)
+summary(m_ovb)
+
+```
+Then compare:
+coef(title_length) in m2 vs m_ovb
+significance (p-values)
