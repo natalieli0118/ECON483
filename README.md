@@ -82,6 +82,7 @@ $$
 ### Full Specification
 
 $$
+
 \log(citations_i + 1)
 =
 \beta_0
@@ -93,11 +94,13 @@ $$
 + \beta_6 Year_i
 + u_i
 $$
+
 ---
 
 ### Nonlinear Test
 
 $$
+
 \log(citations_i + 1)
 =
 \beta_0
@@ -105,7 +108,7 @@ $$
 + \beta_2 TitleLength_i^2
 + X_i'\gamma
 + u_i
-+ $$
+$$
 
 Two-sided t-tests conducted for all coefficients.
 
