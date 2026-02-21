@@ -82,7 +82,8 @@ $$
 ### Full Specification
 
 $$
-\log(citations_i + 1) =
+\log(citations_i + 1)
+=
 \beta_0
 + \beta_1 TitleLength_i
 + \beta_2 AvgWordLength_i
@@ -92,7 +93,6 @@ $$
 + \beta_6 Year_i
 + u_i
 $$
-
 ---
 
 ### Nonlinear Test
@@ -105,7 +105,7 @@ $$
 + \beta_2 TitleLength_i^2
 + X_i'\gamma
 + u_i
-$$
++ $$
 
 Two-sided t-tests conducted for all coefficients.
 
