@@ -82,14 +82,7 @@ $$
 ### Full Specification
 
 $$
-\log(citations_i + 1)= \beta_0
-+ \beta_1 TitleLength_i
-+ \beta_2 AvgWordLength_i
-+ \beta_3 Colon_i
-+ \beta_4 Question_i
-+ \beta_5 NumAuthors_i
-+ \beta_6 Year_i
-+ u_i
+\log(citations_i + 1)= \beta_0 + \beta_1 TitleLength_i + \beta_2 AvgWordLength_i + \beta_3 Colon_i + \beta_4 Question_i + \beta_5 NumAuthors_i + \beta_6 Year_i + u_i
 $$
 
 ---
@@ -97,11 +90,7 @@ $$
 ### Nonlinear Test
 
 $$
-\log(citations_i + 1)= \beta_0
-+ \beta_1 TitleLength_i
-+ \beta_2 TitleLength_i^2
-+ X_i'\gamma
-+ u_i
+\log(citations_i + 1)= \beta_0 + \beta_1 TitleLength_i + \beta_2 TitleLength_i^2 + X_i'\gamma + u_i
 $$
 
 Two-sided t-tests conducted for all coefficients.
